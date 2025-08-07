@@ -46,6 +46,5 @@ export const createUserValidation = z.object({
 
   address: z
     .string({ error: "Address must be string" })
-    .max(200, { error: "Address cannot exceed 200 characters." })
-    .optional(),
+    .max(200, { error: "Address cannot exceed 200 characters." }),
 });
