@@ -8,9 +8,10 @@ export enum ParcelType {
 
 export enum ParcelStatus {
   Requested = "Requested",
-  Approved = "Approved",
+  Confirmed = "Confirmed",
   Dispatched = "Dispatched",
-  InTransit = "InTransit",
+  InTransit = "In Transit",
+  OutForDelivery = "Out For Delivery",
   Delivered = "Delivered",
 }
 
@@ -20,10 +21,17 @@ export interface TrackingEvent {
   note?: string;
 }
 
+export interface Receiver {
+  name: string;
+  phone: string;
+  address: string;
+  email?: string;
+}
+
 export interface IBooking {
   trackingId: string;
   sender: Types.ObjectId;
-  receiver: Types.ObjectId;
+  receiver: Receiver;
   parcelType: ParcelType;
   weight: number;
   fee: number;

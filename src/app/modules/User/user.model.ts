@@ -18,7 +18,7 @@ const userSchema = new Schema<IUser>(
       enum: Object.values(Role),
       default: Role.Sender,
     },
-    isBlocked: {
+    isActive: {
       type: String,
       enum: Object.values(ActiveStatus),
       default: ActiveStatus.Active,

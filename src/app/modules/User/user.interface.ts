@@ -1,6 +1,7 @@
 import { Types } from "mongoose";
 
 export enum Role {
+  SuperAdmin = "SuperAdmin",
   Admin = "Admin",
   Sender = "Sender",
   Receiver = "Receiver",
@@ -10,6 +11,7 @@ export enum ActiveStatus {
   Active = "Active",
   Inactive = "Inactive",
   Blocked = "Blocked",
+  Deleted = "Deleted",
 }
 
 export interface IUser {
@@ -17,7 +19,7 @@ export interface IUser {
   firstName: string;
   lastName: string;
   role: Role;
-  isBlocked: ActiveStatus;
+  isActive: ActiveStatus;
   email: string;
   password: string;
   phone?: string;

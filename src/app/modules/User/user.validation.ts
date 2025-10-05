@@ -1,22 +1,25 @@
 import * as z from "zod";
+import { ActiveStatus, Role } from "./user.interface";
 
 export const createUserValidation = z.object({
   firstName: z
     .string({ error: "First Name must be string" })
     .min(2, { error: "First Name must be at least 2 characters" })
-    .max(50, { error: "First Name must be at most 50 characters" }),
+    .max(50, { error: "First Name must be at most 50 characters" })
+    .regex(/^[A-Za-z\s]+$/, "First name must contain only letters and spaces"),
 
   lastName: z
     .string({ error: "Last Name must be string" })
     .min(2, { error: "Last Name must be at least 2 characters" })
-    .max(50, { error: "Last Name must be at most 50 characters" }),
+    .max(50, { error: "Last Name must be at most 50 characters" })
+    .regex(/^[A-Za-z\s]+$/, "Last name must contain only letters and spaces"),
 
-  role: z.enum(["Admin", "Sender", "Receiver"]).optional().default("Sender"),
+  role: z.enum(Object.values(Role)).optional().default(Role.Sender),
 
-  isBlocked: z
-    .enum(["Active", "Inactive", "Blocked"])
+  isActive: z
+    .enum(Object.values(ActiveStatus))
     .optional()
-    .default("Active"),
+    .default(ActiveStatus.Active),
 
   email: z
     .email({ error: "Invalid email address" })

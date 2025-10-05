@@ -1,4 +1,5 @@
 import mongoose, { Schema } from "mongoose";
+import { calculateParcelFee } from "../../utils/calculateParcelFee";
 import {
   IBooking,
   ParcelStatus,
@@ -6,7 +7,27 @@ import {
   TrackingEvent,
 } from "./booking.interface";
 
-const trackingSchema = new Schema<TrackingEvent>(
+const receiverSchema = new Schema(
+  {
+    name: {
+      type: String,
+      trim: true,
+      required: [true, "Receiver Name is required"],
+    },
+    phone: {
+      type: String,
+      required: [true, "Receiver Phone is required"],
+    },
+    address: {
+      type: String,
+      trim: true,
+      required: [true, "Receiver Address is required"],
+    },
+  },
+  { _id: false }
+);
+
+const trackingEventSchema = new Schema<TrackingEvent>(
   {
     status: {
       type: String,
@@ -15,17 +36,14 @@ const trackingSchema = new Schema<TrackingEvent>(
     },
     location: {
       type: String,
-      required: [true, "Current location is required"],
+      default: "Picked up from sender",
+      required: [true, "Location is required"],
     },
-
     note: {
       type: String,
     },
   },
-  {
-    timestamps: true,
-    versionKey: false,
-  }
+  { _id: false, timestamps: true }
 );
 
 const bookingSchema = new Schema<IBooking>(
@@ -39,11 +57,7 @@ const bookingSchema = new Schema<IBooking>(
       ref: "User",
       required: [true, "Sender Information is required"],
     },
-    receiver: {
-      type: Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "Receiver Information is required"],
-    },
+    receiver: receiverSchema,
     parcelType: {
       type: String,
       enum: Object.values(ParcelType),
@@ -53,21 +67,33 @@ const bookingSchema = new Schema<IBooking>(
     weight: {
       type: Number,
       required: [true, "Weight is required"],
+      min: [0.1, "Weight must be at least 0.1 kg"],
+      max: [10, "Weight cannot exceed 10 kg"],
     },
     fee: {
       type: Number,
-      required: [true, "Weight is required"],
     },
     isBlocked: {
       type: Boolean,
       default: false,
     },
-    trackingEvents: [trackingSchema],
+    trackingEvents: {
+      type: [trackingEventSchema],
+      default: [],
+    },
   },
   {
     timestamps: true,
     versionKey: false,
   }
 );
+
+// Pre-save hook to calculate fee before saving
+bookingSchema.pre("save", function (next) {
+  if (this.isModified("parcelType") || this.isModified("weight")) {
+    this.fee = calculateParcelFee(this.parcelType, this.weight);
+  }
+  next();
+});
 
 export const Booking = mongoose.model<IBooking>("Booking", bookingSchema);
