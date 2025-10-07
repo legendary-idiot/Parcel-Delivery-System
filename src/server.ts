@@ -2,6 +2,7 @@ import { Server } from "http";
 import mongoose from "mongoose";
 import app from "./app";
 import { configDotenv } from "dotenv";
+import { createSuperAdmin } from "./app/utils/createSuperAdmin";
 
 configDotenv();
 
@@ -33,7 +34,10 @@ async function startServer() {
   }
 }
 
-startServer();
+(async () => {
+  await startServer();
+  await createSuperAdmin();
+})();
 
 process.on("unhandledRejection", (error) => {
   console.log("Unhandled Rejection! Shutting down...");

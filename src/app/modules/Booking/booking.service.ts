@@ -4,6 +4,7 @@ import { User } from "../User/user.model";
 import AppError from "../../errorHelpers/customError";
 import { Types } from "mongoose";
 import { generateTrackingID } from "../../utils/generateTrackingID";
+import { Role } from "../User/user.interface";
 
 // Generate unique tracking ID
 
@@ -31,10 +32,11 @@ export const createBooking = async (bookingData: Partial<IBooking>) => {
     trackingEvents: [initialTrackingEvent],
   });
 
-  // Populate sender and receiver details
-  const populatedBooking = await Booking.findById(newBooking._id)
-    .populate("sender", "firstName lastName email phone address")
-    .populate("receiver", "firstName lastName email phone address");
+  // Populate sender details
+  const populatedBooking = await Booking.findById(newBooking._id).populate(
+    "sender",
+    "firstName lastName email phone address"
+  );
 
   return {
     booking: populatedBooking,
@@ -46,7 +48,6 @@ export const getAllBookings = async (page: number = 1, limit: number = 10) => {
 
   const bookings = await Booking.find()
     .populate("sender", "firstName lastName email phone address")
-    .populate("receiver", "firstName lastName email phone address")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -65,9 +66,10 @@ export const getAllBookings = async (page: number = 1, limit: number = 10) => {
 };
 
 export const getBookingByTrackingId = async (trackingId: string) => {
-  const booking = await Booking.findOne({ trackingId })
-    .populate("sender", "firstName lastName email phone address")
-    .populate("receiver", "firstName lastName email phone address");
+  const booking = await Booking.findOne({ trackingId }).populate(
+    "sender",
+    "firstName lastName email phone address"
+  );
 
   if (!booking) {
     throw new AppError(404, "Booking not found");
@@ -80,16 +82,16 @@ export const getBookingByTrackingId = async (trackingId: string) => {
 
 export const getBookingsByUser = async (
   userId: string,
-  role: "sender" | "receiver" = "sender",
+  role: Role.Sender,
   page: number = 1,
   limit: number = 10
 ) => {
   const skip = (page - 1) * limit;
-  const query = role === "sender" ? { sender: userId } : { receiver: userId };
+  const query =
+    role === Role.Sender ? { sender: userId } : { receiver: userId };
 
   const bookings = await Booking.find(query)
     .populate("sender", "firstName lastName email phone address")
-    .populate("receiver", "firstName lastName email phone address")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -126,9 +128,7 @@ export const updateBooking = async (
     bookingId,
     updateData,
     { new: true, runValidators: true }
-  )
-    .populate("sender", "firstName lastName email phone address")
-    .populate("receiver", "firstName lastName email phone address");
+  ).populate("sender", "firstName lastName email phone address");
 
   return {
     booking: updatedBooking,

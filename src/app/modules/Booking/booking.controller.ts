@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { BookingService } from "./booking.service";
+import { Role } from "../User/user.interface";
 
 const createBooking = async (req: Request, res: Response) => {
   const bookingData = req.body;
@@ -38,7 +39,7 @@ const getBookingByTrackingId = async (req: Request, res: Response) => {
 
 const getBookingsByUser = async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const role = (req.query.role as "sender" | "receiver") || "sender";
+  const role = req.query.role as Role.Sender;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
 

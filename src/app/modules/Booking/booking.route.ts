@@ -1,6 +1,6 @@
 import express from "express";
 import { BookingController } from "./booking.controller";
-import { userDataValidation } from "../../middlewares/userDataValidation";
+import { inputDataValidation } from "../../middlewares/inputDataValidation";
 import {
   createBookingValidation,
   updateBookingValidation,
@@ -8,44 +8,29 @@ import {
   getBookingValidation,
   getBookingsByUserValidation,
 } from "./booking.validation";
+import checkAuth from "../../middlewares/checkAuth";
+import { Role } from "../User/user.interface";
 
 const router = express.Router();
 
 // Create a new booking
 router.post(
   "/create-booking",
-  userDataValidation(createBookingValidation),
+  inputDataValidation(createBookingValidation),
   BookingController.createBooking
-);
-
-// Get all bookings with pagination
-router.get("/", BookingController.getAllBookings);
-
-// Get booking by tracking ID
-router.get(
-  "/tracking/:trackingId",
-  userDataValidation(getBookingValidation),
-  BookingController.getBookingByTrackingId
-);
-
-// Get bookings by user (sender or receiver)
-router.get(
-  "/user/:userId",
-  userDataValidation(getBookingsByUserValidation),
-  BookingController.getBookingsByUser
 );
 
 // Update booking details
 router.patch(
-  "/:bookingId",
-  userDataValidation(updateBookingValidation),
+  "/update/:bookingId",
+  inputDataValidation(updateBookingValidation),
   BookingController.updateBooking
 );
 
 // Add tracking event to booking
 router.post(
   "/:bookingId/tracking",
-  userDataValidation(addTrackingEventValidation),
+  inputDataValidation(addTrackingEventValidation),
   BookingController.addTrackingEvent
 );
 
@@ -54,5 +39,26 @@ router.delete("/:bookingId", BookingController.deleteBooking);
 
 // Get booking statistics
 router.get("/stats", BookingController.getBookingStats);
+
+// Get all bookings with pagination
+router.get(
+  "/all-bookings",
+  checkAuth(Role.Admin, Role.SuperAdmin),
+  BookingController.getAllBookings
+);
+
+// Get booking by tracking ID
+router.get(
+  "/tracking/:trackingId",
+  inputDataValidation(getBookingValidation),
+  BookingController.getBookingByTrackingId
+);
+
+// Get bookings by user
+router.get(
+  "/user/:userId",
+  inputDataValidation(getBookingsByUserValidation),
+  BookingController.getBookingsByUser
+);
 
 export const BookingRoutes = router;

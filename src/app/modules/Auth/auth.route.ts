@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { AuthController } from "./auth.controller";
-import { userDataValidation } from "../../middlewares/userDataValidation";
+import { inputDataValidation } from "../../middlewares/inputDataValidation";
 import { loginValidation, logoutValidation } from "./auth.validation";
 
 const router = Router();
@@ -8,14 +8,14 @@ const router = Router();
 // Login route with validation
 router.post(
   "/login",
-  userDataValidation(loginValidation),
+  inputDataValidation(loginValidation),
   AuthController.login
 );
 
 // Logout route with validation
 router.post(
   "/logout",
-  userDataValidation(logoutValidation),
+  inputDataValidation(logoutValidation),
   AuthController.logout
 );
 
