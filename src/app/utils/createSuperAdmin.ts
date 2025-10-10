@@ -1,8 +1,8 @@
-// Create a Super Admin user if not exists
 import bcrypt from "bcryptjs";
-import dotenv from "dotenv";
 import { Role } from "../modules/User/user.interface";
 import { User } from "../modules/User/user.model";
+
+// Create a Super Admin user if not exists
 
 export const createSuperAdmin = async () => {
   try {

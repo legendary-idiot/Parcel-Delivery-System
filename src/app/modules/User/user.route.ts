@@ -39,7 +39,7 @@ router.get(
 // Delete User
 router.delete(
   "/delete/:userId",
-  checkAuth(Role.Admin, Role.SuperAdmin),
+  checkAuth(Role.SuperAdmin, Role.User),
   UserController.deleteUser
 );
 

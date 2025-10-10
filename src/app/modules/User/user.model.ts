@@ -16,7 +16,7 @@ const userSchema = new Schema<IUser>(
     role: {
       type: String,
       enum: Object.values(Role),
-      default: Role.Sender,
+      default: Role.User,
     },
     isActive: {
       type: String,

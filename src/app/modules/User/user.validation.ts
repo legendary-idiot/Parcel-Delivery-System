@@ -18,7 +18,7 @@ export const createUserValidation = z.object({
       error: "Last name must contain only letters and spaces",
     }),
 
-  role: z.enum(Object.values(Role)).optional().default(Role.Sender),
+  role: z.enum(Object.values(Role)).optional().default(Role.User),
 
   isActive: z
     .enum(Object.values(ActiveStatus))
@@ -48,9 +48,7 @@ export const createUserValidation = z.object({
     .regex(/^(?:\+8801\d{9}|01\d{9})$/, {
       error:
         "Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX",
-    })
-    .optional(),
-
+    }),
   address: z
     .string({ error: "Address must be string" })
     .max(200, { error: "Address cannot exceed 200 characters." }),

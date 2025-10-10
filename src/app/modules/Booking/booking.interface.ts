@@ -21,20 +21,15 @@ export interface TrackingEvent {
   note?: string;
 }
 
-export interface Receiver {
-  name: string;
-  phone: string;
-  address: string;
-  email?: string;
-}
-
 export interface IBooking {
+  _id?: Types.ObjectId;
   trackingId: string;
   sender: Types.ObjectId;
-  receiver: Receiver;
+  receiver: Types.ObjectId;
   parcelType: ParcelType;
   weight: number;
   fee: number;
   isBlocked?: boolean;
+  isCancelled?: boolean;
   trackingEvents: TrackingEvent[];
 }

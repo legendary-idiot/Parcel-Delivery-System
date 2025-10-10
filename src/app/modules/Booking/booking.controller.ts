@@ -1,14 +1,32 @@
 import { Request, Response } from "express";
 import { BookingService } from "./booking.service";
 import { Role } from "../User/user.interface";
+import { JwtPayload } from "jsonwebtoken";
 
 const createBooking = async (req: Request, res: Response) => {
   const bookingData = req.body;
-  const result = await BookingService.createBooking(bookingData);
+  const tokenPayload = req.user as JwtPayload;
+  const result = await BookingService.createBooking(bookingData, tokenPayload);
 
   res.status(201).json({
     success: true,
     message: "Booking created successfully",
+    data: result,
+  });
+};
+
+const addTrackingEvent = async (req: Request, res: Response) => {
+  const { bookingId } = req.params;
+  const trackingEvent = req.body;
+
+  const result = await BookingService.addTrackingEvent(
+    bookingId,
+    trackingEvent
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Tracking event added successfully",
     data: result,
   });
 };
@@ -39,7 +57,7 @@ const getBookingByTrackingId = async (req: Request, res: Response) => {
 
 const getBookingsByUser = async (req: Request, res: Response) => {
   const { userId } = req.params;
-  const role = req.query.role as Role.Sender;
+  const role = req.query.role as Role.User;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
 
@@ -59,29 +77,18 @@ const getBookingsByUser = async (req: Request, res: Response) => {
 
 const updateBooking = async (req: Request, res: Response) => {
   const { bookingId } = req.params;
-  const updateData = req.body;
+  const updatedData = req.body;
+  const tokenPayload = req.user as JwtPayload;
 
-  const result = await BookingService.updateBooking(bookingId, updateData);
-
-  res.status(200).json({
-    success: true,
-    message: "Booking updated successfully",
-    data: result,
-  });
-};
-
-const addTrackingEvent = async (req: Request, res: Response) => {
-  const { bookingId } = req.params;
-  const trackingEvent = req.body;
-
-  const result = await BookingService.addTrackingEvent(
+  const result = await BookingService.updateBooking(
     bookingId,
-    trackingEvent
+    updatedData,
+    tokenPayload
   );
 
   res.status(200).json({
     success: true,
-    message: "Tracking event added successfully",
+    message: "Booking updated successfully",
     data: result,
   });
 };

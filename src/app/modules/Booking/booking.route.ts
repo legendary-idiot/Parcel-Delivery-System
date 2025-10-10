@@ -16,22 +16,25 @@ const router = express.Router();
 // Create a new booking
 router.post(
   "/create-booking",
+  checkAuth(...Object.values(Role)),
   inputDataValidation(createBookingValidation),
   BookingController.createBooking
-);
-
-// Update booking details
-router.patch(
-  "/update/:bookingId",
-  inputDataValidation(updateBookingValidation),
-  BookingController.updateBooking
 );
 
 // Add tracking event to booking
 router.post(
   "/:bookingId/tracking",
+  checkAuth(Role.Admin, Role.SuperAdmin),
   inputDataValidation(addTrackingEventValidation),
   BookingController.addTrackingEvent
+);
+
+// Update booking details
+router.patch(
+  "/update/:bookingId",
+  checkAuth(...Object.values(Role)),
+  inputDataValidation(updateBookingValidation),
+  BookingController.updateBooking
 );
 
 // Delete booking

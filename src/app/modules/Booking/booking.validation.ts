@@ -1,26 +1,16 @@
 import * as z from "zod";
 import { ParcelType, ParcelStatus } from "./booking.interface";
 import { Role } from "../User/user.interface";
+import { is } from "zod/locales";
 
 export const createBookingValidation = z.object({
   sender: z
     .string({ error: "Sender ID is required" })
     .min(1, { error: "Sender ID cannot be empty" }),
 
-  receiver: z.object({
-    name: z.string({ error: "Receiver Name is required" }),
-    phone: z
-      .string({ error: "Phone must be string" })
-      .regex(/^(?:\+8801\d{9}|01\d{9})$/, {
-        error:
-          "Phone number must be valid for Bangladesh. Format: +8801XXXXXXXXX or 01XXXXXXXXX",
-      }),
-    address: z
-      .string({ error: "Address must be string" })
-      .trim()
-      .min(5, { error: "Address cannot be less than 5 characters" })
-      .max(200, { error: "Address cannot exceed 200 characters." }),
-  }),
+  receiver: z
+    .string({ error: "Receiver ID is required" })
+    .min(1, { error: "Receiver ID cannot be empty" }),
 
   parcelType: z
     .enum(Object.values(ParcelType), {
@@ -59,6 +49,11 @@ export const createBookingValidation = z.object({
 });
 
 export const updateBookingValidation = z.object({
+  receiver: z
+    .string({ error: "Receiver ID is required" })
+    .min(1, { error: "Receiver ID cannot be empty" })
+    .optional(),
+
   parcelType: z
     .enum(Object.values(ParcelType), {
       error: "Invalid parcel type",
@@ -71,12 +66,7 @@ export const updateBookingValidation = z.object({
     .max(10, { error: "Weight cannot exceed 10 kg" })
     .optional(),
 
-  fee: z
-    .number({ error: "Fee must be a number" })
-    .min(0, { error: "Fee cannot be negative" })
-    .optional(),
-
-  isBlocked: z.boolean().optional(),
+  isCancelled: z.boolean().optional(),
 });
 
 export const addTrackingEventValidation = z.object({
@@ -110,6 +100,6 @@ export const getBookingsByUserValidation = z.object({
     .enum(Object.values(Role), {
       error: "Invalid role",
     })
-    .default(Role.Sender)
+    .default(Role.User)
     .optional(),
 });

@@ -1,4 +1,4 @@
-import { IUser, Role } from "./user.interface";
+import { ActiveStatus, IUser, Role } from "./user.interface";
 import { User } from "./user.model";
 import bcrypt from "bcryptjs";
 import AppError from "../../errorHelpers/customError";
@@ -112,10 +112,23 @@ const getAllUsers = async () => {
 
 // Delete user by ID
 const deleteUser = async (userId: string) => {
-  const user = await User.findByIdAndDelete(userId).select("-password");
+  //Check User Existence
+  const user = await User.findById(userId).select("-password");
   if (!user) {
     throw new AppError(404, "User not found");
   }
+
+  //Check if user is already inactive or blocked
+  if (
+    user.isActive === ActiveStatus.Inactive ||
+    user.isActive === ActiveStatus.Blocked
+  ) {
+    throw new AppError(400, `This user is ${user.isActive}. Contact Admin`);
+  }
+
+  // Delete User by setting isActive status to Deleted
+  user.isActive = ActiveStatus.Deleted;
+  await user.save();
   return user;
 };
 
