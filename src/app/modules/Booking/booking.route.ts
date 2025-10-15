@@ -5,8 +5,6 @@ import {
   createBookingValidation,
   updateBookingValidation,
   addTrackingEventValidation,
-  getBookingValidation,
-  getBookingsByUserValidation,
 } from "./booking.validation";
 import checkAuth from "../../middlewares/checkAuth";
 import { Role } from "../User/user.interface";
@@ -38,10 +36,11 @@ router.patch(
 );
 
 // Delete booking
-router.delete("/:bookingId", BookingController.deleteBooking);
-
-// Get booking statistics
-router.get("/stats", BookingController.getBookingStats);
+router.delete(
+  "/delete/:bookingId",
+  checkAuth(Role.SuperAdmin),
+  BookingController.deleteBooking
+);
 
 // Get all bookings with pagination
 router.get(
@@ -50,18 +49,21 @@ router.get(
   BookingController.getAllBookings
 );
 
-// Get booking by tracking ID
-router.get(
-  "/tracking/:trackingId",
-  inputDataValidation(getBookingValidation),
-  BookingController.getBookingByTrackingId
-);
+// Get booking by tracking ID (public access)
+router.get("/tracking/:trackingId", BookingController.getBookingByTrackingId);
 
 // Get bookings by user
 router.get(
   "/user/:userId",
-  inputDataValidation(getBookingsByUserValidation),
+  checkAuth(...Object.values(Role)),
   BookingController.getBookingsByUser
+);
+
+// Get booking statistics (admin, super admin only)
+router.get(
+  "/stats",
+  checkAuth(Role.Admin, Role.SuperAdmin),
+  BookingController.getBookingStats
 );
 
 export const BookingRoutes = router;

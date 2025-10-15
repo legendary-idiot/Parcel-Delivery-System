@@ -74,17 +74,22 @@ export const updateBooking = async (
     throw new AppError(404, "Booking not found");
   }
 
-  // Check if booking is cancelled
-  if (booking.isCancelled) {
-    throw new AppError(400, "Cannot update a cancelled booking");
-  }
-
   // Role-based authorization
   if (
     tokenPayload.role === Role.User &&
     booking.sender.toString() !== tokenPayload.userId
   ) {
     throw new AppError(403, "Only senders can update their own bookings");
+  }
+
+  // Check if booking is cancelled
+  if (booking.isCancelled) {
+    throw new AppError(400, "Cannot update a cancelled booking");
+  }
+
+  // Check if booking is blocked
+  if (booking.isBlocked) {
+    throw new AppError(400, "Cannot update a blocked booking");
   }
 
   // Last event status check
@@ -200,11 +205,49 @@ export const deleteBooking = async (bookingId: string) => {
 
   // Check if booking is already dispatched
   const lastEvent = booking.trackingEvents[booking.trackingEvents.length - 1];
-  if (lastEvent?.status !== ParcelStatus.Requested) {
-    throw new AppError(400, "Cannot delete booking that has been processed");
+  if (
+    lastEvent &&
+    [
+      ParcelStatus.Confirmed,
+      ParcelStatus.Dispatched,
+      ParcelStatus.InTransit,
+      ParcelStatus.OutForDelivery,
+      ParcelStatus.Delivered,
+    ].includes(lastEvent.status)
+  ) {
+    throw new AppError(
+      400,
+      "Cannot delete a booking that has been confirmed or dispatched"
+    );
   }
 
-  await Booking.findByIdAndDelete(bookingId);
+  // Remove booking reference from sender and receiver using a transaction
+  const session = await mongoose.startSession();
+  if (!session) {
+    throw new AppError(500, "Failed to start MongoDB session");
+  }
+
+  try {
+    session.startTransaction();
+    await User.updateOne(
+      { _id: booking.sender },
+      { $pull: { bookings: booking._id } },
+      { session }
+    );
+    await User.updateOne(
+      { _id: booking.receiver },
+      { $pull: { bookings: booking._id } },
+      { session }
+    );
+    await Booking.findByIdAndDelete(bookingId, { session });
+
+    await session.commitTransaction();
+  } catch (error) {
+    await session.abortTransaction();
+    throw new AppError(500, "Failed to delete booking");
+  } finally {
+    await session.endSession();
+  }
 
   return {
     message: "Booking deleted successfully",
@@ -215,7 +258,8 @@ export const getAllBookings = async (page: number = 1, limit: number = 10) => {
   const skip = (page - 1) * limit;
 
   const bookings = await Booking.find()
-    .populate("sender", "firstName lastName email phone address")
+    .populate("sender", "firstName lastName phone address")
+    .populate("receiver", "firstName lastName phone address")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
@@ -224,7 +268,7 @@ export const getAllBookings = async (page: number = 1, limit: number = 10) => {
 
   return {
     bookings,
-    pagination: {
+    meta: {
       page,
       limit,
       total,
@@ -234,10 +278,9 @@ export const getAllBookings = async (page: number = 1, limit: number = 10) => {
 };
 
 export const getBookingByTrackingId = async (trackingId: string) => {
-  const booking = await Booking.findOne({ trackingId }).populate(
-    "sender",
-    "firstName lastName email phone address"
-  );
+  const booking = await Booking.findOne({ trackingId })
+    .populate("sender", "firstName lastName phone address")
+    .populate("receiver", "firstName lastName phone address");
 
   if (!booking) {
     throw new AppError(404, "Booking not found");
@@ -250,20 +293,36 @@ export const getBookingByTrackingId = async (trackingId: string) => {
 
 export const getBookingsByUser = async (
   userId: string,
-  role: Role.User,
+  tokenPayload: JwtPayload,
   page: number = 1,
   limit: number = 10
 ) => {
-  const skip = (page - 1) * limit;
-  const query = { [role === Role.User ? "sender" : "receiver"]: userId };
+  // Validate user existence
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError(404, "User not found");
+  }
 
-  const bookings = await Booking.find(query)
-    .populate("sender", "firstName lastName email phone address")
+  // Ensure users can only access their own bookings
+  if (tokenPayload.role === Role.User && tokenPayload.userId !== userId) {
+    throw new AppError(403, "Users can only access their own bookings");
+  }
+
+  const skip = (page - 1) * limit;
+
+  // Find bookings where the user is either sender or receiver
+  const bookings = await Booking.find({
+    $or: [{ sender: userId }, { receiver: userId }],
+  })
+    .populate("sender", "firstName lastName phone address")
+    .populate("receiver", "firstName lastName phone address")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);
 
-  const total = await Booking.countDocuments(query);
+  const total = await Booking.countDocuments({
+    $or: [{ sender: userId }, { receiver: userId }],
+  });
 
   return {
     bookings,
@@ -301,7 +360,14 @@ export const getBookingStats = async () => {
   ]);
 
   const totalBookings = await Booking.countDocuments();
-  const totalRevenue = await Booking.aggregate([
+
+  // Total revenue from delivered parcels
+  const totalDeliveredRevenue = await Booking.aggregate([
+    {
+      $match: {
+        "trackingEvents.status": ParcelStatus.Delivered,
+      },
+    },
     {
       $group: {
         _id: null,
@@ -312,7 +378,7 @@ export const getBookingStats = async () => {
 
   return {
     totalBookings,
-    totalRevenue: totalRevenue[0]?.total || 0,
+    totalRevenues: totalDeliveredRevenue[0]?.total || 0,
     parcelTypeStats: stats,
     statusStats,
   };

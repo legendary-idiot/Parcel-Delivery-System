@@ -1,7 +1,5 @@
 import * as z from "zod";
 import { ParcelType, ParcelStatus } from "./booking.interface";
-import { Role } from "../User/user.interface";
-import { is } from "zod/locales";
 
 export const createBookingValidation = z.object({
   sender: z
@@ -82,24 +80,5 @@ export const addTrackingEventValidation = z.object({
   note: z
     .string()
     .max(200, { error: "Note cannot exceed 200 characters" })
-    .optional(),
-});
-
-export const getBookingValidation = z.object({
-  trackingId: z
-    .string({ error: "Tracking ID is required" })
-    .min(1, { error: "Tracking ID cannot be empty" }),
-});
-
-export const getBookingsByUserValidation = z.object({
-  userId: z
-    .string({ error: "User ID is required" })
-    .min(1, { error: "User ID cannot be empty" }),
-
-  role: z
-    .enum(Object.values(Role), {
-      error: "Invalid role",
-    })
-    .default(Role.User)
     .optional(),
 });
